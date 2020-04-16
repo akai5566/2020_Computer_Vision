@@ -1,7 +1,7 @@
 import os
 import sys
 import numpy as np
-from numpy.fft import fft2, ifft2, fftshift, ifftshift
+#from numpy.fft import fft2, ifft2, fftshift, ifftshift
 import math
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ def mse(imageA, imageB):
 
 # find how much image shifts, and return the shifted value   
 def findShift(basicImg, matchingImg):
-    basicN, basicM = basicImg.shape.   # N:height M:width
+    basicN, basicM = basicImg.shape   # N:height M:width
     matchN, matchM = matchingImg.shape # N:height M:width
     
     #print "basic:", basicN, basicM
@@ -66,6 +66,9 @@ def findShiftWithShifted(basicImg, matchingImg, xShifted, yShifted, err):
                 
     return xShiftedReturn, yShiftedReturn, err
 
+# do image pyramid and down sampling several layers of small images
+# match the smallest image and find the shift
+# up sampling the image and adjust the shift until the original image
 def downSearch(basicImg, matchingImg, sub_rate, iteration):
     xShifted = 0
     yShifted = 0
@@ -87,7 +90,6 @@ def downSearch(basicImg, matchingImg, sub_rate, iteration):
         matchingPyramid.append(np.array(matchingImg))
         
     xShifted, yShifted, err = findShift(basicPyramid[iteration], matchingPyramid[iteration])
-    
     #print "after findShift: ", xShifted, yShifted, err
     
     for i in range(iteration-1, -1, -1):
@@ -103,9 +105,10 @@ if __name__ == "__main__":
     img = Image.open(sys.argv[1])
     oriWidth, oriHeight = img.size
     maxHeight = int(oriHeight/3) + 1 if oriHeight % 3 == 1 else int(oriHeight/3)
-    
     #print img.mode
-    #crop(left, upper, right, lower)
+    
+    # crop(left, upper, right, lower)
+    # devide image into the three b g r channels
     b = img.crop((0,                     0, oriWidth,             maxHeight))
     g = img.crop((0,             maxHeight, oriWidth, oriHeight - maxHeight))
     r = img.crop((0, oriHeight - maxHeight, oriWidth,             oriHeight))
@@ -160,7 +163,7 @@ if __name__ == "__main__":
     
     # create a new image with the given mode and size
     # L mean gray img that each pixel has 8 bits
-    # 0 for black 255 fpr white
+    # 0 for black 255 for white
     # L = R * 299/1000 + G * 587/1000+ B * 114/1000
     newRimg = Image.new('L', (oriWidth + xExtend, maxHeight + yExtend))
     newGimg = Image.new('L', (oriWidth + xExtend, maxHeight + yExtend))
@@ -176,11 +179,11 @@ if __name__ == "__main__":
     # each containing a copy of one of the original bands (red, green, blue).
 
     # L mean gray img that each pixel has 32 bits
-    # 0 for black 255 fpr white
+    # 0 for black 255 for white
     # I = R * 299/1000 + G * 587/1000 + B * 114/1000
-    if img.format == "TIFF":
+    if img.format == "TIFF": # check the format of input dataset
         _, depth = img.mode.split(';') # seperated by ';' (I;depth)
-        depth = float(depth) #16
+        depth = float(depth) # 16
         # normalize 16 bits and extend it into 8 bits
         newRimg.paste(Image.fromarray(np.array(r) / (2 ** depth - 1) * 255.0).convert("L"), (ryShifted, rxShifted))
         #print "r: ",r
