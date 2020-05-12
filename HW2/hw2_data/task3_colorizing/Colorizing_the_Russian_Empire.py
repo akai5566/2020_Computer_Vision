@@ -1,5 +1,6 @@
 import os
 import sys
+import time, datetime
 import numpy as np
 #from numpy.fft import fft2, ifft2, fftshift, ifftshift
 import math
@@ -13,7 +14,7 @@ import matplotlib.pyplot as plt
 def mse(imageA, imageB):
     err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
     err /= float(imageA.shape[0] * imageA.shape[1])
-
+    #print imageA.astype("float")
     # return the MSE
     # the lower the error, the more similar the two images are    
     return err
@@ -96,14 +97,17 @@ def downSearch(basicImg, matchingImg, sub_rate, iteration):
         xShifted *= sub_rate
         yShifted *= sub_rate
         xShifted, yShifted, err = findShiftWithShifted(basicPyramid[i], matchingPyramid[i], xShifted, yShifted, err)
+        #xShifted, yShifted, err = findShift(basicPyramid[i], matchingPyramid[i])
         #print "iteration:", i, ":", xShifted, yShifted, err
     
     return xShifted, yShifted, err
-
+    
 if __name__ == "__main__":
+    time_start=time.time()
     print("Aligning the G and R channels to the B channel of " + "\"" + sys.argv[1] + "\"" + "...")
     img = Image.open(sys.argv[1])
     oriWidth, oriHeight = img.size
+    #print oriWidth
     maxHeight = int(oriHeight/3) + 1 if oriHeight % 3 == 1 else int(oriHeight/3)
     #print img.mode
     
@@ -124,11 +128,12 @@ if __name__ == "__main__":
 
     cut = int(oriWidth / 21.0) # cut the boarder
     #print "cut:", cut
+    
     sub_rate = 2
     iteration = 0
     while cut / (2 ** iteration) > 10:
         iteration += 1
-    #print "iteration:", iteration
+    print "iteration:", iteration
     
     imgWidth, imgHeight = g.size
     gCut = g.crop((cut, cut, imgWidth - cut, imgHeight - cut))
@@ -197,8 +202,12 @@ if __name__ == "__main__":
         newGimg.paste(g, (gyShifted, gxShifted))
         newBimg.paste(b, (byShifted, bxShifted))
     
+    # calculate the execution time 
+    time_end=time.time()
+    print "execution time: ",time_end-time_start, "s"
+
     final = Image.merge("RGB", [newRimg, newGimg, newBimg])
-    result_path = os.path.abspath('.') + "/Result"  
+    result_path = os.path.abspath('.') + "/Result2"  
     final.save(os.path.join(result_path, sys.argv[1] + "_result.bmp"))
     plt.title('Result')
     plt.imshow(final)
