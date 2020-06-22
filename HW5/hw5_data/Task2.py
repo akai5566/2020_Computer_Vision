@@ -1,26 +1,20 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 # coding: utf-8
 
 # # Bag of SIFT representation + nearest neighbor classifier
 
 # In[2]:
 
-
+from __future__ import print_function
 import argparse as ap
 import cv2
 import imutils 
 import numpy as np
 import os
 import glob
-from sklearn.svm import LinearSVC
-from sklearn.externals import joblib
 from scipy.cluster.vq import *
-from sklearn.preprocessing import StandardScaler
-from __future__ import print_function
 import matplotlib.pyplot as plt
 import time
-from sklearn.externals import joblib
-
 
 # ## Detect train data feature
 
@@ -28,19 +22,26 @@ from sklearn.externals import joblib
 
 
 des_list = []
-path = "hw5_data/train/**/*"
+path = "train/**/*"
 
 t1 = time.time()
 files = glob.glob(path)
 sift = cv2.xfeatures2d.SIFT_create()
 for File in files:
+    #print(File)
     im = cv2.imread(File)
+    #print(im)
+    #im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    im = cv2.normalize(im, None, 0, 1, cv2.NORM_MINMAX)
     #im = cv2.resize(im, (200,200), interpolation = cv2.INTER_CUBIC)
     kp1, des1 = sift.detectAndCompute(im,None)
     des_list.append((File, des1))
-    #print(len(des1))
+    #print(len(des_list))
+    
+    
+des_list_0 = des_list[0]
+descriptors = des_list_0[1]
 
-descriptors = des_list[0][1]
 for image_path, descriptor in des_list[1:]:
     if descriptor is None:
         print(0)
@@ -48,30 +49,24 @@ for image_path, descriptor in des_list[1:]:
     #print(descriptor.shape)
     descriptors = np.vstack((descriptors, descriptor))
     #print(descriptor.shape)
-#print(descriptors)
+    #print(descriptors)
 t2 = time.time()
 print("time:", t2-t1)
 
-
-# In[ ]:
-
-
-print(descriptors.shape)
+#print(descriptors.shape)
 
 
-# ## Detect test data feature
-
-# In[ ]:
-
+# Detect test data feature
 
 test_list = []
-path = "hw5_data/test/**/*"
+path = "test/**/*"
 
 t1 = time.time()
 files = glob.glob(path)
 sift = cv2.xfeatures2d.SIFT_create()
 for File in files:
     im = cv2.imread(File)
+    im = cv2.normalize(im, None, 0, 1, cv2.NORM_MINMAX)
     #im = cv2.resize(im, (200,200), interpolation = cv2.INTER_CUBIC)
     kp1, des1 = sift.detectAndCompute(im,None)
     test_list.append((File, des1))
@@ -81,26 +76,19 @@ t2 = time.time()
 print("time:", t2-t1)
 
 
-# ## K means for all feature
-
-# In[ ]:
-
-
+# K means for all feature
 # Perform k-means clustering
 t1 = time.time()
-k = 300
+k = 295
 voc, variance = kmeans(descriptors, k, 1) 
 t2 = time.time()
 print("time:", t2-t1)
 
 
-# ## Enlarge feature number
-
-# In[ ]:
-
+# Enlarge feature number
 
 des_list = []
-path = "hw5_data/train/**/*"
+path = "train/**/*"
 
 t1 = time.time()
 files = glob.glob(path)
@@ -110,7 +98,8 @@ for File in files:
     im = cv2.resize(im, (600,600), interpolation = cv2.INTER_CUBIC)
     kp1, des1 = sift.detectAndCompute(im,None)
     des_list.append((File, des1))
-    #print(len(des1))
+    #print(len(des_list))
+    
 
 descriptors = des_list[0][1]
 for image_path, descriptor in des_list[1:]:
@@ -129,7 +118,7 @@ print("time:", t2-t1)
 
 
 test_list = []
-path = "hw5_data/test/**/*"
+path = "test/**/*"
 
 t1 = time.time()
 files = glob.glob(path)
@@ -186,6 +175,7 @@ for i in range(1500):
     #im_features[i] /= np.sqrt(np.sum(im_features[i]**2))
     im_features[i] = (im_features[i] - np.mean(im_features[i])) / np.std(im_features[i])
     
+
 print(im_features)
 
 
